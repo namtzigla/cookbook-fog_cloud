@@ -78,9 +78,9 @@ action :destroy do
 end
 
 def create_volume_using_compute_api(connection, name, size)
+  instance_id = find_instance_id(connection[:provider])
   conn = compute_connection(connection)
-  require 'pry'
-  binding.pry
+
 end
 
 def create_volume_using_volume_api(connection, name, size)
@@ -99,13 +99,15 @@ end
 def find_instance_id(provider)
   # for right now this supports only openstack
   # TODO: add the rest of the providers
-  Chef::Log.info "==== PROVIDER #{provider}"
+  Chef::Log.info "PROVIDER #{provider}"
   case provider.to_s.downcase
   when /openstack/
-    JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
+    @id ||= JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
   when /aws/
-    open('http://169.254.169.254/latest/meta-data/instance-id').read
+    @id ||= open('http://169.254.169.254/latest/meta-data/instance-id').read
   else
-    nil
+    @id ||= nil
   end
+  Chef::Log.info "Instance id: #{@id}"
+  @id 
 end

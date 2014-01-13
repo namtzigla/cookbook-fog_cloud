@@ -15,7 +15,7 @@ Create volume
 ```
 fog_cloud_volume 'test' do
   action :create
-  size 20
+  size 20 # size of the volume in GB
   connection({
                :provider => 'OpenStack',
                :openstack_auth_url => node[:openstack_auth_url],

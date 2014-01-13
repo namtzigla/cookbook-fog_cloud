@@ -5,3 +5,5 @@ group :test do
 	gem 'test-kitchen'
 	gem 'kitchen-openstack' , :git  => 'https://github.com/namtzigla/kitchen-openstack.git'
 end
+
+gem 'fog'

@@ -18,14 +18,12 @@
 #
 
 
-require 'fog'
-
 action :create do
   id = find_instance_id(new_resource.connection[:provider])
   #check if the founded instance id is correct
 
   unless id == nil
-    Chef::Log.info "instance uuid #{id}"
+    Chef::Log.info "Instance id #{id}"
     volu = volume_connection(new_resource.connection)
     comp = compute_connection(new_resource.connection)
 
@@ -33,9 +31,9 @@ action :create do
     vol_id = v.body['volume']['id']
     v = volu.volumes.find {|v| v.id == vol_id }
 
-    Chef::Log.info "==== VOLUME ID #{vol_id}"
+    Chef::Log.info "Volume ID #{vol_id}"
     until v.status == "available" do
-        Chef::Log.info"==== VOLUME ST #{v.status}"
+        Chef::Log.info"Volume status #{v.status}"
         v.reload
     end
 
@@ -50,7 +48,7 @@ end
 
 action :destroy do
   id = find_instance_id(new_resource.connection[:provider])
-  Chef::Log.info "Server ID: #{id}"
+  Chef::Log.info "Instance id: #{id}"
   unless id == nil
     comp = compute_connection(new_resource.connection)
     volu = volume_connection(new_resource.connection)

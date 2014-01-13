@@ -26,6 +26,7 @@ platforms:
 suites:
   - name: default
     run_list:
+      - recipe[build-essential::default]
       - recipe[fog_cloud::default]
       - recipe[fog_cloud::test]
     attributes:
@@ -34,6 +35,8 @@ suites:
       openstack_auth_url:  <%= ENV['OS_AUTH_URL'] %>
       openstack_key_name: <%= ENV['OS_KEY_NAME'] %>
       openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
+      build_essential:
+        compiletime: 1
         # cloud:
       #   platform: openstack
       # fog_auth_databag_name: test_databag 

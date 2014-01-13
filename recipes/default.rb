@@ -19,11 +19,10 @@
 
 
 
-include_recipe 'build-essential'
+#include_recipe 'build-essential::default'
 
-chef_gem 'fog' do
-  action :nothing
-end
+chef_gem 'fog'
+require 'fog'
 
 
 

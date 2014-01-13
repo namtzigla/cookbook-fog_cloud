@@ -1,5 +1,7 @@
 # fog_cloud cookbook
 
+
+
 # Requirements
 It was tested with Chef 11.8.2 and against Openstack Grizzly installation 
 
@@ -8,8 +10,33 @@ It was tested with Chef 11.8.2 and against Openstack Grizzly installation
 - build-essential cookbook [http://community.opscode.com/cookbooks/build-essential]
 
 # Usage
-See `test.rb` recipe
-
+Create volume
+```
+fog_cloud_volume 'test' do
+  action :create
+  size 20
+  connection({
+               :provider => 'OpenStack',
+               :openstack_auth_url => node[:openstack_auth_url],
+               :openstack_username => node[:openstack_username],
+               :openstack_api_key => node[:openstack_api_key],
+               :openstack_tenant => node[:openstack_tenant]
+  })
+end
+```
+Destroy volume
+```
+fog_cloud_volume 'test' do
+  action :destroy
+  connection({
+               :provider => 'OpenStack',
+               :openstack_auth_url => node[:openstack_auth_url],
+               :openstack_username => node[:openstack_username],
+               :openstack_api_key => node[:openstack_api_key],
+               :openstack_tenant => node[:openstack_tenant]
+  })
+end
+```
 # Attributes
 None yet 
 

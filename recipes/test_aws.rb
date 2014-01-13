@@ -17,11 +17,26 @@
 # limitations under the License.
 #
 
-actions :create, :destroy
 
-default_action :create
+fog_cloud_volume 'test' do
+  action :create
+  size 20
+  connection({
+               :provider => 'AWS',
+               :aws_access_key_id => node[:aws_access_key_id],
+               :aws_secret_access_key => node[:aws_secret_access_key],
+               :region => node[:aws_region]
 
-attribute :connection, :kind_of => Hash, :required => true
-attribute :size, :kind_of => Integer, :default => 10
-attribute :use_volume_api, :kind_of => [TrueClass,FalseClass], :default => false
+               
+  })
+end
 
+fog_cloud_volume 'test' do
+  action :destroy
+  connection({
+               :provider => 'AWS',
+               :aws_access_key_id => node[:aws_access_key_id],
+               :aws_secret_access_key => node[:aws_secret_access_key],
+               :region => node[:aws_region]
+  })
+end

@@ -21,6 +21,7 @@
 
 #include_recipe 'build-essential::default'
 
+chef_gem 'pry'
 chef_gem 'fog'
 require 'fog'
 

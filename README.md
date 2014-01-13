@@ -1,7 +1,7 @@
 # fog_cloud 
 
 This cookbook provides resources and providers to configure and manage generic cloud resources using fog project. Currently supported resources:
- - Volume (fog_cloud_volume)
+ - Volume (`fog_cloud_volume`)
 
 # Requirements
 It was tested with Chef 11.8.2 and against Openstack Grizzly installation 

@@ -27,8 +27,14 @@ suites:
   - name: default
     run_list:
       - recipe[fog_cloud::default]
+      - recipe[fog_cloud::test]
     attributes:
-      # cloud:
+      openstack_username: <%= ENV['OS_USERNAME'] %>
+      openstack_api_key:  <%= ENV['OS_PASSWORD'] %>
+      openstack_auth_url:  <%= ENV['OS_AUTH_URL'] %>
+      openstack_key_name: <%= ENV['OS_KEY_NAME'] %>
+      openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
+        # cloud:
       #   platform: openstack
       # fog_auth_databag_name: test_databag 
 

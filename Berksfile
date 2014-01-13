@@ -2,4 +2,4 @@ site :opscode
 
 metadata
 
-cookbook 'ohai'
+cookbook 'build-essential'

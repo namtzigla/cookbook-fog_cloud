@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'berkshelf'
-gem 'test-kitchen'
-gem 'kitchen-vagrant'
-gem 'kitchen-openstack', :path  => '~/dev/personal/knife/kitchen-openstack'
-gem 'pry'
+group :test do 
+	gem 'berkshelf'
+	gem 'test-kitchen'
+	gem 'kitchen-openstack' , :git  => 'https://github.com/namtzigla/kitchen-openstack.git'
+end

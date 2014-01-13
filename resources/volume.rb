@@ -17,15 +17,10 @@
 # limitations under the License.
 #
 
+actions :create, :destroy
 
+default_action :create
 
-include_recipe 'build-essential'
-
-chef_gem 'fog' do
-  action :nothing
-end
-
-
-
-
+attribute :connection, :kind_of => Hash, :required => true
+attribute :size, :kind_of => Integer, :default => 10
 

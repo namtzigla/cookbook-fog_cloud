@@ -1,21 +1,21 @@
 # fog_cloud 
 
 This cookbook provides resources and providers to configure and manage generic cloud resources using fog project. Currently supported resources:
- - Volume (`fog_cloud_volume`)
+* Volume (`fog_cloud_volume`)
 
 # Requirements
 It was tested with Chef 11.8.2 and against Openstack Grizzly installation 
 
 # Dependencies
-- fog gem [http://fog.io]
-- build-essential cookbook [http://community.opscode.com/cookbooks/build-essential]
+* [fog gem](http://fog.io)
+* [build-essential cookbook](http://community.opscode.com/cookbooks/build-essential)
 
 # Usage
 Create volume
 
     fog_cloud_volume 'test' do
       action :create
-      size 20 # size of the volume in GB
+      size 20 # size of the volume in GB 
       connection({
                    :provider => 'OpenStack',
                    :openstack_auth_url => node[:openstack_auth_url],

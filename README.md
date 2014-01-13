@@ -12,32 +12,32 @@ It was tested with Chef 11.8.2 and against Openstack Grizzly installation
 
 # Usage
 Create volume
-```
-fog_cloud_volume 'test' do
-  action :create
-  size 20 # size of the volume in GB
-  connection({
-               :provider => 'OpenStack',
-               :openstack_auth_url => node[:openstack_auth_url],
-               :openstack_username => node[:openstack_username],
-               :openstack_api_key => node[:openstack_api_key],
-               :openstack_tenant => node[:openstack_tenant]
-  })
-end
-```
+
+    fog_cloud_volume 'test' do
+      action :create
+      size 20 # size of the volume in GB
+      connection({
+                   :provider => 'OpenStack',
+                   :openstack_auth_url => node[:openstack_auth_url],
+                   :openstack_username => node[:openstack_username],
+                   :openstack_api_key => node[:openstack_api_key],
+                   :openstack_tenant => node[:openstack_tenant]
+      })
+    end
+
 Destroy volume
-```
-fog_cloud_volume 'test' do
-  action :destroy
-  connection({
-               :provider => 'OpenStack',
-               :openstack_auth_url => node[:openstack_auth_url],
-               :openstack_username => node[:openstack_username],
-               :openstack_api_key => node[:openstack_api_key],
-               :openstack_tenant => node[:openstack_tenant]
-  })
-end
-```
+
+    fog_cloud_volume 'test' do
+      action :destroy
+      connection({
+                   :provider => 'OpenStack',
+                   :openstack_auth_url => node[:openstack_auth_url],
+                   :openstack_username => node[:openstack_username],
+                   :openstack_api_key => node[:openstack_api_key],
+                   :openstack_tenant => node[:openstack_tenant]
+      })
+    end
+
 # Attributes
 None yet 
 

@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 
+require 'fog'
 
 action :create do
   id = find_instance_id(new_resource.connection[:provider])
@@ -42,7 +43,6 @@ action :create do
       sleep 1
       v.reload
     end
-
   end
 end
 
@@ -91,4 +91,13 @@ def find_instance_id(provider)
     else
       nil
     end
+end
+
+
+def initialize(*args)
+  super
+  @action = :create
+
+  @run_context.include_recipe "build-essential"
+  @run_context.chef_gem 'fog'
 end

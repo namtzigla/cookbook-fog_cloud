@@ -2,7 +2,7 @@
 # Cookbook Name:: aws
 # Attributes:: default
 #
-# Copyright 2014, Florin STAN 
+# Copyright 2014, Florin STAN
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@
 
 #include_recipe 'build-essential::default'
 
-chef_gem 'fog'
-require 'fog'
+#chef_gem 'fog'
+#require 'fog'
 
 
 

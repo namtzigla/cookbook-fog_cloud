@@ -17,8 +17,6 @@
 # limitations under the License.
 #
 
-require 'fog'
-
 action :create do
   id = find_instance_id(new_resource.connection[:provider])
   #check if the founded instance id is correct
@@ -38,11 +36,15 @@ action :create do
         v.reload
     end
 
-    comp.attach_volume(vol_id,id, '')
+    resp = comp.attach_volume(vol_id, id, nil)
     until v.status == 'in-use' do
       sleep 1
       v.reload
     end
+    Chef::Log.info "We attached volume to '#{resp.data[:body]["volumeAttachment"]["device"]}' on #{node.hostname}"
+
+    node.set['fog_cloud']['vol_id'] = vol_id
+    node.set['fog_cloud']['device'] = resp.data[:body]["volumeAttachment"]["device"]
   end
 end
 
@@ -69,7 +71,13 @@ action :destroy do
       Chef::Log.info "Destroying volume #{v.id}"
         v.destroy
     }
-    end
+
+    # TODO: Test this code
+    #
+    # %w{vol_id device}.each do |a|
+      # Chef::Node.default_attrs['fog_cloud'].delete(a) rescue nil
+    # end
+  end
 end
 
 
@@ -98,6 +106,8 @@ def initialize(*args)
   super
   @action = :create
 
+  Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
   @run_context.include_recipe "build-essential"
-  @run_context.chef_gem 'fog'
+  Chef::Resource::ChefGem.new('fog', @run_context).run_action(:install)
+  require 'fog'
 end

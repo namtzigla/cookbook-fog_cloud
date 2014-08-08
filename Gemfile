@@ -1,9 +1,11 @@
 source 'https://rubygems.org'
 
+gem 'chef'
+
 group :test do 
 	gem 'berkshelf'
 	gem 'test-kitchen'
-	gem 'kitchen-openstack' , :git  => 'https://github.com/namtzigla/kitchen-openstack.git'
+	gem 'kitchen-openstack'
 end
 
 gem 'fog'

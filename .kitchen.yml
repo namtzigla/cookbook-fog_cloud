@@ -1,32 +1,32 @@
 ---
 driver:
   name: openstack
-  require_chef_omnibus: true
   openstack_username: <%= ENV['OS_USERNAME'] %>
-  openstack_api_key:  <%= ENV['OS_PASSWORD'] %>
-  openstack_auth_url:  <%= ENV['OS_AUTH_URL'] %>
-  openstack_key_name: <%= ENV['OS_KEY_NAME'] %>
-  openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
-  openstack_network_name: net-shared-vlan-19
-  key_name: <%= ENV['OS_KEY_NAME'] %>  
-  public_key_path: <%= ENV['OS_KEY_FILE'] %>    
-  ssh_key: <%= ENV['OS_KEY_FILE'] %>
-
+  openstack_api_key: <%= ENV['OS_PASSWORD'] %>
+  openstack_auth_url: <%= ENV['OS_AUTH_URL'] %>
+  require_chef_omnibus: latest
+  image_ref: 6caaa4c2-7947-4678-ad8c-eb04a2c9e140
+  flavor_ref: 2
 
 provisioner:
-  name: chef_solo
+  name: chef_zero
+  environments_path: test/integration/default/environments
 
 platforms:
-- name: ubuntu-12.04
-  driver_config:
-    username: ubuntu
-    image_ref: 7b1007d6-2ab9-4f50-a43f-9b01bd585617
-    flavor_ref: 39ec8fb8-229d-46a2-9c1b-b6a53b99c6e0
+  - name: ubuntu-12.04
+    driver_config:
+      box: ubuntu-12.04
+      openstack_network_name: net-shared-vlan-25
+      username: ubuntu
+      key_name: <%= ENV['OS_KEY_NAME'] %>
+      private_key_path: <%= ENV['OS_KEY_FILE'] || '~/.ssh/id_rsa' %>
+      network_ref:
+        - 84685c12-ce9b-4056-8dcb-bfa2283e97bf
+    run_list:
 
 suites:
   - name: default
     run_list:
-      - recipe[build-essential::default]
       - recipe[fog_cloud::default]
       - recipe[fog_cloud::test]
     attributes:
@@ -35,10 +35,6 @@ suites:
       openstack_auth_url:  <%= ENV['OS_AUTH_URL'] %>
       openstack_key_name: <%= ENV['OS_KEY_NAME'] %>
       openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
-      build_essential:
-        compiletime: 1
-        # cloud:
-      #   platform: openstack
-      # fog_auth_databag_name: test_databag 
+
 
 

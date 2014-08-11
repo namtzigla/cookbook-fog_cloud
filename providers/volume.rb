@@ -17,32 +17,39 @@
 # limitations under the License.
 #
 
-
 action :create do
   id = find_instance_id(new_resource.connection[:provider])
   #check if the founded instance id is correct
 
   unless id == nil
     Chef::Log.info "Instance id #{id}"
-    volu = volume_connection(new_resource.connection)
     comp = compute_connection(new_resource.connection)
+    exists, item = existing(comp, id, new_resource.name)
 
-    v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
-    vol_id = v.body['volume']['id']
-    v = volu.volumes.find {|v| v.id == vol_id }
+    if exists == false
+      volu = volume_connection(new_resource.connection)
+      v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
+      vol_id = v.body['volume']['id']
+      v = volu.volumes.find {|v| v.id == vol_id }
 
-    Chef::Log.info "Volume ID #{vol_id}"
-    until v.status == "available" do
-        Chef::Log.info"Volume status #{v.status}"
-        v.reload
+      Chef::Log.info "Volume ID #{vol_id}"
+      until v.status == "available" do
+          Chef::Log.info"Volume status #{v.status}"
+          v.reload
+      end
+
+      resp = attach(comp, vol_id, id)
+    
+      Chef::Log.info "We attached volume to '#{resp.data[:body]["volumeAttachment"]["device"]}' on #{node.hostname}"
+    else
+      if item['status'] == 'available'
+        resp = attach(comp, item['id'], id)
+        Chef::Log.info("Volume was available and was re-attached to '#{resp.data[:body]["volumeAttachment"]["device"]}'")
+      elsif item['status'] == 'in-use'
+        Chef::Log.info("Volume is already attached to '#{item['attachments'][0]["device"]}'")
+      end
     end
-
-    comp.attach_volume(vol_id,id, '')
-    until v.status == 'in-use' do
-      sleep 1
-      v.reload
-    end
-
+    update_attributes(comp, id)
   end
 end
 
@@ -69,6 +76,49 @@ action :destroy do
       Chef::Log.info "Destroying volume #{v.id}"
         v.destroy
     }
+
+    update_attributes(comp, id)
+  end
+end
+
+def attach(cur_connection, vol_id, sys_id)
+    volu = volume_connection(cur_connection)
+    v = volu.volumes.find {|v| v.id == vol_id }
+    resp = cur_connection.attach_volume(vol_id, sys_id, nil)
+
+    until v.status == 'in-use' do
+      sleep 1
+      v.reload
+    end
+    resp
+end
+
+def existing(cur_connection, server_id, vol_name)
+    vols = cur_connection.list_volumes(server_id)
+    ret = false
+    item = nil
+
+    for v in vols.data[:body]['volumes']
+      if v['displayName'] == vol_name then
+        Chef::Log.info("Volume id #{v['id']}")
+        Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+        ret = true
+        item = v
+        break
+      end
+    end
+    return ret, v
+end
+
+def update_attributes(cur_connection, server_id)
+    vols = cur_connection.list_volumes(server_id)
+    
+    node.set['fog_cloud']['volumes'] = [] 
+
+    vols.data[:body]['volumes'].each do |v|
+      if v['status'] == 'in-use'
+        vols << v
+      end
     end
 end
 
@@ -91,4 +141,28 @@ def find_instance_id(provider)
     else
       nil
     end
+end
+
+
+def initialize(*args)
+  super
+  @action = :create
+  require 'json'
+
+  # Try to load 'fog' before forcing the dependancies to run.
+  begin
+    require 'fog'
+  rescue LoadError => e
+    Chef::Log.error("#{e.message}")
+    Chef::Log.error(e.backtrace.join("\n"))
+    Chef::Log.info("'FOG' failed to load. We will attempt to install dependancies.")
+    
+    Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
+
+    node.set['build-essential']['compile_time'] = 1
+    @run_context.include_recipe "build-essential"
+
+    Chef::Resource::ChefGem.new('fog', @run_context).run_action(:install)
+    require 'fog'
+  end
 end

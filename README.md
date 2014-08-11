@@ -7,6 +7,9 @@ This cookbook provides resources and providers to configure and manage generic c
 It was tested with Chef 11.8.2 and against Openstack Grizzly installation 
 
 # Dependencies
+These will be installed at compile time if they don't already exist so
+that `require 'fog'` does not fail.
+
 * [fog gem](http://fog.io)
 * [build-essential cookbook](http://community.opscode.com/cookbooks/build-essential)
 
@@ -39,12 +42,44 @@ Destroy volume
     end
 
 # Attributes
-None yet 
+When resource is created it sets `node['fog_cloud']['volumes']` which is an
+array of hashes.  Each hash is the information for one volume instance.  All
+data for that volume can be access from the has.
+
+Sample `node['fog_cloud']['volumes']`:
+
+    node['fog_cloud']['volumes'] =
+      [
+        {
+           "status": "in-use",
+           "displayDescription": "testing_2",
+           "availabilityZone": "nova",
+           "displayName": "testing_2",
+           "attachments": [
+             {
+                "device": "/dev/vdd",
+                "serverId": "31a2e888-367a-466a-af86-f193339c31d8",
+                "id": "bb145bc2-6ddc-429e-8f0d-1ba69e7f9847",
+                "volumeId": "bb145bc2-6ddc-429e-8f0d-1ba69e7f9847"
+             }
+           ],
+           "volumeType": "None",
+           "snapshotId": null,
+           "metadata": {
+             "readonly": "False",
+             "attached_mode": "rw"
+           },
+           "id": "bb145bc2-6ddc-429e-8f0d-1ba69e7f9847",
+           "createdAt": "2014-08-08T18:24:07.000000",
+           "size": 10
+        }
+      ]
+
 
 # Recipes
 
 ## default.rb
-It installs the required deps (build-tools and fog gem)
+Does nothing.
 
 ## test.rb
 Just for tests and examples 

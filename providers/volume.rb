@@ -113,13 +113,14 @@ end
 def update_attributes(cur_connection, server_id)
     vols = cur_connection.list_volumes(server_id)
     
-    node.set['fog_cloud']['volumes'] = [] 
+    active = [] 
 
     vols.data[:body]['volumes'].each do |v|
       if v['status'] == 'in-use'
-        vols << v
+        active << v
       end
     end
+    node.set['fog_cloud']['volumes'] = active
 end
 
 

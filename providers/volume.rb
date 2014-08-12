@@ -120,7 +120,7 @@ def update_attributes(cur_connection, server_id)
         active << v
       end
     end
-    node['fog_cloud']['volumes'] = active
+    node.set['fog_cloud']['volumes'] = active
 end
 
 

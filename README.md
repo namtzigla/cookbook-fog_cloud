@@ -44,7 +44,7 @@ Destroy volume
 # Attributes
 When resource is created it sets `node['fog_cloud']['volumes']` which is an
 array of hashes.  Each hash is the information for one volume instance.  All
-data for that volume can be access from the has.
+data for that volume can be access from there.
 
 Sample `node['fog_cloud']['volumes']`:
 

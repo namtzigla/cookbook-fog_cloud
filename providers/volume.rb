@@ -138,7 +138,8 @@ def find_instance_id(provider)
     Chef::Log.info "==== PROVIDER #{provider}"
     case provider.to_s.downcase
     when /openstack|rackspace/
-      JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
+      # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
+      JSON.parse(OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json', {:read_timeout => 10}).read)["uuid"]
     else
       nil
     end

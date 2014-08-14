@@ -24,7 +24,7 @@ action :create do
   unless id == nil
     Chef::Log.info "Instance id #{id}"
     comp = compute_connection(new_resource.connection)
-    exists, item = existing(comp, id, new_resource.name)
+    exists = existing(comp, id, new_resource.name)
 
     if exists == false
       volu = volume_connection(new_resource.connection)
@@ -39,17 +39,10 @@ action :create do
       end
 
       resp = attach(comp, vol_id, id)
-    
       Chef::Log.info "We attached volume to '#{resp.data[:body]["volumeAttachment"]["device"]}' on #{node.hostname}"
-    else
-      if item['status'] == 'available'
-        resp = attach(comp, item['id'], id)
-        Chef::Log.info("Volume was available and was re-attached to '#{resp.data[:body]["volumeAttachment"]["device"]}'")
-      elsif item['status'] == 'in-use'
-        Chef::Log.info("Volume is already attached to '#{item['attachments'][0]["device"]}'")
-      end
+
+      update_attributes(comp, id, 'add')
     end
-    update_attributes(comp, id)
   end
 end
 
@@ -77,7 +70,7 @@ action :destroy do
         v.destroy
     }
 
-    update_attributes(comp, id)
+    update_attributes(comp, id, 'delete')
   end
 end
 
@@ -96,31 +89,39 @@ end
 def existing(cur_connection, server_id, vol_name)
     vols = cur_connection.list_volumes(server_id)
     ret = false
-    item = nil
+    exist = node['fog_cloud']['volumes'].collect {|n| n['attachments'][0]['device']}
 
     for v in vols.data[:body]['volumes']
-      if v['displayName'] == vol_name then
+      if v['displayName'] == vol_name and exist.include?(v['attachments'][0]['device']) then
         Chef::Log.info("Volume id #{v['id']}")
         Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+        if v['status'] == 'in-use'
+          Chef::Log.info("Volume is attached to '#{v['attachments'][0]["device"]}'")
+        end
         ret = true
-        item = v
         break
       end
     end
-    return ret, v
+    return ret
 end
 
-def update_attributes(cur_connection, server_id)
-    vols = cur_connection.list_volumes(server_id)
-    
-    active = [] 
-
-    vols.data[:body]['volumes'].each do |v|
-      if v['status'] == 'in-use'
-        active << v
-      end
+def update_attributes(cur_connection, server_id, action)
+  vols = cur_connection.list_volumes(server_id)
+  vols.data[:body]['volumes'].each do |vol|
+    if vol['displayName'] == new_resource.name
+      @item = vol
+      break
     end
-    node.set['fog_cloud']['volumes'] = active
+  end
+
+  unless @item.nil?
+    case action
+    when 'add'
+      node.set['fog_cloud']['volumes'] << @item
+    when 'delete'
+      node.set['fog_cloud']['volumes'].delete_if {|v| v['displayName'] == @item['displayName']}
+    end
+  end
 end
 
 
@@ -149,7 +150,9 @@ end
 def initialize(*args)
   super
   @action = :create
-  require 'json'
+  if node['fog_cloud'].nil?
+    node.set['fog_cloud']['volumes'] = []
+  end
 
   # Try to load 'fog' before forcing the dependancies to run.
   begin

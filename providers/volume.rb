@@ -17,10 +17,6 @@
 # limitations under the License.
 #
 
-
-require 'pry'
-
-
 action :create do
   id = find_instance_id(new_resource.connection[:provider])
   #check if the founded instance id is correct

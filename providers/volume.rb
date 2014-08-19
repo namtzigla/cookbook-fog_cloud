@@ -17,6 +17,10 @@
 # limitations under the License.
 #
 
+
+require 'pry'
+
+
 action :create do
   id = find_instance_id(new_resource.connection[:provider])
   #check if the founded instance id is correct
@@ -150,7 +154,7 @@ end
 def initialize(*args)
   super
   @action = :create
-  if node['fog_cloud'].nil?
+  if node['fog_cloud'].nil? || node['fog_cloud']['volumes'].nil?
     node.set['fog_cloud']['volumes'] = []
   end
 
@@ -161,7 +165,7 @@ def initialize(*args)
     Chef::Log.error("#{e.message}")
     Chef::Log.error(e.backtrace.join("\n"))
     Chef::Log.info("'FOG' failed to load. We will attempt to install dependancies.")
-    
+
     Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
 
     node.set['build-essential']['compile_time'] = 1

@@ -143,7 +143,7 @@ def find_instance_id(provider)
       begin
         # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
         JSON.parse(OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json', {:read_timeout => 5}).read)["uuid"]
-      rescue ETIMEDOUT
+      rescue
         if delay = retries.shift
           sleep delay
           retry

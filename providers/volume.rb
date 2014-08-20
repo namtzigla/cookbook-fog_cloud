@@ -139,17 +139,19 @@ def find_instance_id(provider)
     Chef::Log.info "==== PROVIDER #{provider}"
     case provider.to_s.downcase
     when /openstack|rackspace/
-      delay = [1, 2]
+      retries = 0
       begin
         # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
         JSON.parse(OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json', {:read_timeout => 5}).read)["uuid"]
       rescue
-        if delay = retries.shift
-          sleep delay
-          retry
-        else
+        retries += 1
+        sleep retries
+        retry
+
+        if retries == 3
           raise
         end
+        
       end
     else
       nil

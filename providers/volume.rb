@@ -160,7 +160,7 @@ end
 def initialize(*args)
   super
   @action = :create
-  if node['fog_cloud'].nil? # || node['fog_cloud']['volumes'].nil?
+  if node['fog_cloud'].nil? || node['fog_cloud']['volumes'].nil?
     node.set['fog_cloud']['volumes'] = []
   end
 

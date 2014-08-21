@@ -88,17 +88,24 @@ end
 def existing(cur_connection, server_id, vol_name)
     vols = cur_connection.list_volumes(server_id)
     ret = false
-    exist = node['fog_cloud']['volumes'].collect {|n| n['attachments'][0]['device']}
 
-    for v in vols.data[:body]['volumes']
-      if v['displayName'] == vol_name and exist.include?(v['attachments'][0]['device']) then
-        Chef::Log.info("Volume id #{v['id']}")
-        Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
-        if v['status'] == 'in-use'
-          Chef::Log.info("Volume is attached to '#{v['attachments'][0]["device"]}'")
+    vols.data[:body]['volumes'].each do |v|
+      begin
+        if v['displayName'] == vol_name and v['attachments'][0]['serverId'] == server_id
+          Chef::Log.info("Volume id #{v['id']}")
+          Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+          if v['status'] == 'in-use'
+            Chef::Log.info("Volume is attached to '#{v['attachments'][0]["device"]}'")
+          end
+          ret = true
+          break
         end
-        ret = true
-        break
+      rescue => e
+        Chef::Log.warn(e.message)
+        if v['status'] == 'available'
+          Chef::Log.info("Volume id #{v['id']}")
+          Chef::Log.info("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+        end
       end
     end
     return ret

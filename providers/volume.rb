@@ -149,6 +149,7 @@ def find_instance_id(provider)
           raise
         else
           retries += 1
+          Chef::Log.warn("Retrying connection to OpenStack... #{retries}/3")
           sleep retries
           retry
         end

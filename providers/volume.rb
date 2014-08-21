@@ -40,9 +40,8 @@ action :create do
 
       resp = attach(comp, vol_id, id)
       Chef::Log.info "We attached volume to '#{resp.data[:body]["volumeAttachment"]["device"]}' on #{node.hostname}"
-
-      update_attributes(comp, id, 'add')
     end
+    update_attributes(comp, id)
   end
 end
 
@@ -70,7 +69,7 @@ action :destroy do
         v.destroy
     }
 
-    update_attributes(comp, id, 'delete')
+    update_attributes(comp, id)
   end
 end
 
@@ -105,23 +104,9 @@ def existing(cur_connection, server_id, vol_name)
     return ret
 end
 
-def update_attributes(cur_connection, server_id, action)
+def update_attributes(cur_connection, server_id)
   vols = cur_connection.list_volumes(server_id)
-  vols.data[:body]['volumes'].each do |vol|
-    if vol['displayName'] == new_resource.name
-      @item = vol
-      break
-    end
-  end
-
-  unless @item.nil?
-    case action
-    when 'add'
-      node.set['fog_cloud']['volumes'] << @item
-    when 'delete'
-      node.set['fog_cloud']['volumes'].delete_if {|v| v['displayName'] == @item['displayName']}
-    end
-  end
+  node.set['fog_cloud']['volumes'] = vols.data[:body]['volumes'].select {|v| v if v['status'] == 'in-use' and v['attachments'][0]['serverId'] == server_id }
 end
 
 

@@ -34,12 +34,12 @@ action :create do
 
       Chef::Log.info "Volume ID #{vol_id}"
       until v.status == "available" do
-          Chef::Log.info"Volume status #{v.status}"
-          v.reload
+        Chef::Log.info"Volume status #{v.status}"
+        v.reload
       end
 
       resp = attach(comp, vol_id, id)
-    
+
       Chef::Log.info "We attached volume to '#{resp.data[:body]["volumeAttachment"]["device"]}' on #{node.hostname}"
     else
       if item['status'] == 'available'
@@ -60,88 +60,119 @@ action :destroy do
     comp = compute_connection(new_resource.connection)
     volu = volume_connection(new_resource.connection)
 
-    volumes = volu.volumes.find_all { |v|
-      v.attachments.find { |a|
+    volumes = volu.volumes.find_all do |v|
+      v.attachments.find do |a|
         a['server_id'] == id
-      } != nil and v.display_name == new_resource.name
-    }
+      end != nil and v.display_name == new_resource.name
+    end
+
+
     Chef::Log.info "We have #{volumes.length} volumes to destroy"
-    volumes.each { |v|
+    volumes.each do |v|
       Chef::Log.info "Detaching volume #{v.id}"
       comp.detach_volume(id, v.id)
       until v.status == 'available' do
-          sleep 1
-          v.reload
+        sleep 1
+        v.reload
       end
       Chef::Log.info "Destroying volume #{v.id}"
-        v.destroy
-    }
+      v.destroy
+    end
 
     update_attributes(comp, id)
   end
 end
 
 def attach(cur_connection, vol_id, sys_id)
-    volu = volume_connection(cur_connection)
-    v = volu.volumes.find {|v| v.id == vol_id }
-    resp = cur_connection.attach_volume(vol_id, sys_id, nil)
+  volu = volume_connection(cur_connection)
+  v = volu.volumes.find do |v| 
+    v.id == vol_id 
+  end
 
-    until v.status == 'in-use' do
-      sleep 1
-      v.reload
-    end
-    resp
+  resp = cur_connection.attach_volume(vol_id, sys_id, nil)
+
+  until v.status == 'in-use' do
+    sleep 1
+    v.reload
+  end
+  resp
 end
 
-def existing(cur_connection, server_id, vol_name)
-    vols = cur_connection.list_volumes(server_id)
-    ret = false
-    item = nil
+#
+# name - volume name
+# size - volume size in GB
+# wait_for - wait for volume to become available
+def create_volume(name, size, wait_for = true) 
+  volu = volume_connection(new_resource.connection)
+  v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
+  vol_id = v.body['volume']['id']
+  v = volu.volumes.find {|v| v.id == vol_id }
 
-    for v in vols.data[:body]['volumes']
-      if v['displayName'] == vol_name then
-        Chef::Log.info("Volume id #{v['id']}")
-        Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
-        ret = true
-        item = v
-        break
-      end
+  Chef::Log.info "Volume ID #{vol_id}"
+  until v.status == "available" do
+    Chef::Log.info"Volume status #{v.status}"
+    v.reload
+  end
+end
+
+
+def existing(cur_connection, server_id, vol_name)
+  vols = cur_connection.list_volumes(server_id)
+  ret = false
+  item = nil
+  # require 'pry'
+  # binding.pry
+
+  for v in vols.data[:body]['volumes']
+    if v['displayName'] == vol_name then
+      Chef::Log.info("Volume id #{v['id']}")
+      Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+      ret = true
+      item = v
+      break
     end
-    return ret, v
+  end
+  return ret, v
 end
 
 def update_attributes(cur_connection, server_id)
-    vols = cur_connection.list_volumes(server_id)
-    
-    active = [] 
 
-    vols.data[:body]['volumes'].each do |v|
-      if v['status'] == 'in-use'
-        active << v
-      end
-    end
-    node.set['fog_cloud']['volumes'] = active
+  vols = cur_connection.list_volumes(server_id).data[:body]['volumes']
+  node.set['fog_cloud']['volumes'] = vols.select {|v| v if v['status'] == 'in-use' and v['attachments'][0]['serverId'] == server_id }
 end
 
 
 def compute_connection(connection)
-    @compute_connection ||= Fog::Compute.new(connection)
+  @compute_connection ||= Fog::Compute.new(connection)
 end
 
 def volume_connection(connection)
-    @volume_connection ||= Fog::Volume.new(connection)
+  @volume_connection ||= Fog::Volume.new(connection)
 end
 
 def find_instance_id(provider)
-    # for right now this supports only openstack
-    # TODO: add the rest of the providers
-    Chef::Log.info "==== PROVIDER #{provider}"
-    case provider.to_s.downcase
-    when /openstack|rackspace/
-      JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
+  # for right now this supports only openstack
+  # TODO: add the rest of the providers
+  Chef::Log.info "Fog provider #{provider}"
+
+  case provider.to_s.downcase
+  when /openstack|rackspace/
+    JSON.parse(get_metadata('openstack'))['uuid']
+    # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
+  else
+    nil
+  end
+end
+
+
+def get_metadata(provider='openstack')
+  @meta_data ||= case provider
+    when 'openstack'
+      open('http://169.254.169.254/openstack/latest/meta_data.json',options = {:proxy => false}).read
     else
-      nil
+      '{}'
     end
+  
 end
 
 
@@ -157,8 +188,8 @@ def initialize(*args)
     Chef::Log.error("#{e.message}")
     Chef::Log.error(e.backtrace.join("\n"))
     Chef::Log.info("'FOG' failed to load. We will attempt to install dependancies.")
-    
-    Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
+
+    #Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
 
     node.set['build-essential']['compile_time'] = 1
     @run_context.include_recipe "build-essential"

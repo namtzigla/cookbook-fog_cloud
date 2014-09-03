@@ -24,7 +24,7 @@ action :create do
   unless id == nil
     Chef::Log.info "Instance id #{id}"
     comp = compute_connection(new_resource.connection)
-    exists, item = existing(comp, id, new_resource.name)
+    exists = existing(comp, id, new_resource.name)
 
     if exists == false
       volu = volume_connection(new_resource.connection)
@@ -39,15 +39,7 @@ action :create do
       end
 
       resp = attach(comp, vol_id, id)
-
       Chef::Log.info "We attached volume to '#{resp.data[:body]["volumeAttachment"]["device"]}' on #{node.hostname}"
-    else
-      if item['status'] == 'available'
-        resp = attach(comp, item['id'], id)
-        Chef::Log.info("Volume was available and was re-attached to '#{resp.data[:body]["volumeAttachment"]["device"]}'")
-      elsif item['status'] == 'in-use'
-        Chef::Log.info("Volume is already attached to '#{item['attachments'][0]["device"]}'")
-      end
     end
     update_attributes(comp, id)
   end
@@ -85,8 +77,8 @@ end
 
 def attach(cur_connection, vol_id, sys_id)
   volu = volume_connection(cur_connection)
-  v = volu.volumes.find do |v| 
-    v.id == vol_id 
+  v = volu.volumes.find do |v|
+    v.id == vol_id
   end
 
   resp = cur_connection.attach_volume(vol_id, sys_id, nil)
@@ -102,7 +94,7 @@ end
 # name - volume name
 # size - volume size in GB
 # wait_for - wait for volume to become available
-def create_volume(name, size, wait_for = true) 
+def create_volume(name, size, wait_for = true)
   volu = volume_connection(new_resource.connection)
   v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
   vol_id = v.body['volume']['id']
@@ -172,14 +164,16 @@ def get_metadata(provider='openstack')
     else
       '{}'
     end
-  
+
 end
 
 
 def initialize(*args)
   super
   @action = :create
-  require 'json'
+  if node['fog_cloud'].nil? || node['fog_cloud']['volumes'].nil?
+    node.set['fog_cloud']['volumes'] = []
+  end
 
   # Try to load 'fog' before forcing the dependancies to run.
   begin

@@ -1,24 +1,27 @@
-# fog_cloud 
+# fog_cloud
 
 This cookbook provides resources and providers to configure and manage generic cloud resources using fog project. Currently supported resources:
 * Volume (`fog_cloud_volume`)
 
 # Requirements
-It was tested with Chef 11.8.2 and against Openstack Grizzly installation 
+It was tested with Chef 11.8.2 and against Openstack Grizzly installation
 
 # Dependencies
-These will be installed at compile time if they don't already exist so
-that `require 'fog'` does not fail.
+You need to add `recipe[apt::default]` and `recipe[build-essential::default]`
+to your run list so that `require 'fog'` does not fail.
 
 * [fog gem](http://fog.io)
 * [build-essential cookbook](http://community.opscode.com/cookbooks/build-essential)
+
+You may want to add `default['apt']['compile_time_update'] = true` to your
+attributes `default.rb`.
 
 # Usage
 Create volume
 
     fog_cloud_volume 'test' do
       action :create
-      size 20 # size of the volume in GB 
+      size 10 # size of the volume in GB
       connection({
                    :provider => 'OpenStack',
                    :openstack_auth_url => node[:openstack_auth_url],
@@ -44,7 +47,11 @@ Destroy volume
 # Attributes
 When resource is created it sets `node['fog_cloud']['volumes']` which is an
 array of hashes.  Each hash is the information for one volume instance.  All
-data for that volume can be access from there.
+data for that volume can be access from there. Once a volume is created and
+added to the attribute it then becomes your responsibility.  If you remove the
+volume or detach it Chef will still assume it is there and will not create/attach
+the volume.  You will need to delete the item in the attribute for that volume to
+create a new one.
 
 Sample `node['fog_cloud']['volumes']`:
 
@@ -82,7 +89,7 @@ Sample `node['fog_cloud']['volumes']`:
 Does nothing.
 
 ## test.rb
-Just for tests and examples 
+Just for tests and examples
 
 # License and Author
 Author:: Florin STAN (<florin.stan@gmail.com>)

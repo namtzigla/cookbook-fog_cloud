@@ -18,6 +18,9 @@
 #
 
 action :create do
+  Chef::Resource::ChefGem.new('fog', @run_context).run_action(:install)
+  require 'fog'
+
   id = find_instance_id(new_resource.connection[:provider])
   #check if the founded instance id is correct
 
@@ -26,7 +29,9 @@ action :create do
     comp = compute_connection(new_resource.connection)
     exists = existing(comp, id, new_resource.name)
 
-    if exists == false
+    Chef::Log.info "Disk #{exists}"
+
+    unless exists
       volu = volume_connection(new_resource.connection)
       v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
       vol_id = v.body['volume']['id']
@@ -46,6 +51,8 @@ action :create do
 end
 
 action :destroy do
+  Chef::Resource::ChefGem.new('fog', @run_context).run_action(:install)
+  require 'fog'
   id = find_instance_id(new_resource.connection[:provider])
   Chef::Log.info "Instance id: #{id}"
   unless id == nil
@@ -109,22 +116,29 @@ end
 
 
 def existing(cur_connection, server_id, vol_name)
-  vols = cur_connection.list_volumes(server_id)
-  ret = false
-  item = nil
-  # require 'pry'
-  # binding.pry
+    vols = cur_connection.list_volumes(server_id)
+    ret = false
 
-  for v in vols.data[:body]['volumes']
-    if v['displayName'] == vol_name then
-      Chef::Log.info("Volume id #{v['id']}")
-      Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
-      ret = true
-      item = v
-      break
+    vols.data[:body]['volumes'].each do |v|
+      begin
+        if v['displayName'] == vol_name and v['attachments'][0]['serverId'] == server_id
+          Chef::Log.info("Volume id #{v['id']}")
+          Chef::Log.warn("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+          if v['status'] == 'in-use'
+            Chef::Log.info("Volume is attached to '#{v['attachments'][0]["device"]}'")
+          end
+          ret = true
+          break
+        end
+      rescue => e
+        Chef::Log.warn(e.message)
+        if v['status'] == 'available'
+          Chef::Log.info("Volume id #{v['id']}")
+          Chef::Log.info("Volume '#{v['displayName']}' already exists and is #{v['status']}.")
+        end
+      end
     end
-  end
-  return ret, v
+    return ret
 end
 
 def update_attributes(cur_connection, server_id)
@@ -150,7 +164,6 @@ def find_instance_id(provider)
   case provider.to_s.downcase
   when /openstack|rackspace/
     JSON.parse(get_metadata('openstack'))['uuid']
-    # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
   else
     nil
   end
@@ -173,22 +186,5 @@ def initialize(*args)
   @action = :create
   if node['fog_cloud'].nil? || node['fog_cloud']['volumes'].nil?
     node.set['fog_cloud']['volumes'] = []
-  end
-
-  # Try to load 'fog' before forcing the dependancies to run.
-  begin
-    require 'fog'
-  rescue LoadError => e
-    Chef::Log.error("#{e.message}")
-    Chef::Log.error(e.backtrace.join("\n"))
-    Chef::Log.info("'FOG' failed to load. We will attempt to install dependancies.")
-
-    #Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
-
-    node.set['build-essential']['compile_time'] = 1
-    @run_context.include_recipe "build-essential"
-
-    Chef::Resource::ChefGem.new('fog', @run_context).run_action(:install)
-    require 'fog'
   end
 end

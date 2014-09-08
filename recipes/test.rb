@@ -2,7 +2,7 @@
 # Cookbook Name:: aws
 # Attributes:: default
 #
-# Copyright 2014, Florin STAN 
+# Copyright 2014, Florin STAN
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 
 fog_cloud_volume 'test' do
   action :create
-  size 20
+  size 10
   connection({
                :provider => 'OpenStack',
                :openstack_auth_url => node[:openstack_auth_url],

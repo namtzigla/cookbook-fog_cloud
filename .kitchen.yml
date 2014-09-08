@@ -5,7 +5,7 @@ driver:
   openstack_api_key: <%= ENV['OS_PASSWORD'] %>
   openstack_auth_url: <%= ENV['OS_AUTH_URL'] %>
   require_chef_omnibus: latest
-  image_ref: 6caaa4c2-7947-4678-ad8c-eb04a2c9e140
+  image_ref: ubuntu-12.04-x86_64
   flavor_ref: 2
 
 provisioner:
@@ -27,14 +27,14 @@ platforms:
 suites:
   - name: default
     run_list:
-      - recipe[fog_cloud::default]
+      - recipe[apt::default]
+      - recipe[build-essential::default]
       - recipe[fog_cloud::test]
     attributes:
+      apt:
+        compile_time_update: true
       openstack_username: <%= ENV['OS_USERNAME'] %>
       openstack_api_key:  <%= ENV['OS_PASSWORD'] %>
       openstack_auth_url:  <%= ENV['OS_AUTH_URL'] %>
       openstack_key_name: <%= ENV['OS_KEY_NAME'] %>
       openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
-
-
-

@@ -34,7 +34,7 @@ action :create do
       comp = compute_connection(new_resource.connection)
       exists = existing(comp, id, new_resource.name)
 
-      if exists == false
+      unless exists
         volu = volume_connection(new_resource.connection)
         v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
         vol_id = v.body['volume']['id']
@@ -49,7 +49,6 @@ action :create do
         resp = attach(comp, vol_id, id)
         Chef::Log.info "We attached volume '#{new_resource.name}' to '#{resp.data[:body]["volumeAttachment"]["device"]}' on '#{node['hostname']}'"
         update_attributes(comp, id, vol_id)
-        Chef::Log.warn(node['fog_cloud']['volumes'])
       end
     end
   end
@@ -160,9 +159,6 @@ def update_attributes(cur_connection, server_id, vol_id)
       break
     end
   end
-  # require 'json'
-  # Chef::Log.warn(jj @resp.data)
-  # node.set['fog_cloud']['volumes'] = Array.new(node['fog_cloud']['volumes']) << @resp.data[:body]['volumes']
 end
 
 
@@ -182,7 +178,6 @@ def find_instance_id(provider)
     when /openstack|rackspace/
       retries = 0
       begin
-        # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
         JSON.parse(get_metadata('openstack'))['uuid']
       rescue
         if retries == 3

@@ -47,7 +47,7 @@ action :create do
         end
 
         resp = attach(comp, vol_id, id)
-        Chef::Log.info "We attached volume '#{new_resource.name}' to '#{resp.data[:body]["volumeAttachment"]["device"]}' on '#{node.hostname}'"
+        Chef::Log.info "We attached volume '#{new_resource.name}' to '#{resp.data[:body]["volumeAttachment"]["device"]}' on '#{node['hostname']}'"
         update_attributes(comp, id, vol_id)
         Chef::Log.warn(node['fog_cloud']['volumes'])
       end
@@ -135,7 +135,7 @@ def existing(cur_connection, server_id, vol_name)
             Chef::Log.info("Status of \##{index + 1} is '#{live[index]['status']}'")
             Chef::Log.info("Volume id #{live[index]['id']}")
             if live[index]['status'] == 'in-use' and item['attachments'][0]['serverId'] == server_id
-              Chef::Log.info("Volume is attached to '#{live[index]['attachments'][0]["device"]}' on '#{node.hostname}'")
+              Chef::Log.info("Volume is attached to '#{live[index]['attachments'][0]["device"]}' on '#{node['hostname']}'")
             end
           end
         else

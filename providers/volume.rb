@@ -216,21 +216,4 @@ def initialize(*args)
   if node['fog_cloud'].nil? || node['fog_cloud']['volumes'].nil?
     node.set['fog_cloud']['volumes'] = []
   end
-
-  # Try to load 'fog' before forcing the dependancies to run.
-  # begin
-    # require 'fog'
-  # rescue LoadError => e
-    # Chef::Log.error("#{e.message}")
-    # Chef::Log.error(e.backtrace.join("\n"))
-    # Chef::Log.info("'FOG' failed to load. We will attempt to install dependancies during run.")
-
-    #Chef::Resource::Execute.new('apt-get update', @run_context).run_action(:run)
-
-    # node.set['build-essential']['compile_time'] = 1
-    # @run_context.include_recipe "build-essential"
-
-    # Chef::Resource::ChefGem.new('fog', @run_context).run_action(:install)
-    # require 'fog'
-  # end
 end

@@ -34,7 +34,7 @@ action :create do
       comp = compute_connection(new_resource.connection)
       exists = existing(comp, id, new_resource.name)
 
-      if exists == false
+      unless exists
         volu = volume_connection(new_resource.connection)
         v = volu.create_volume(new_resource.name, new_resource.name, new_resource.size.to_s)
         vol_id = v.body['volume']['id']
@@ -47,9 +47,8 @@ action :create do
         end
 
         resp = attach(comp, vol_id, id)
-        Chef::Log.info "We attached volume '#{new_resource.name}' to '#{resp.data[:body]["volumeAttachment"]["device"]}' on '#{node.hostname}'"
+        Chef::Log.info "We attached volume '#{new_resource.name}' to '#{resp.data[:body]["volumeAttachment"]["device"]}' on '#{node['hostname']}'"
         update_attributes(comp, id, vol_id)
-        Chef::Log.warn(node['fog_cloud']['volumes'])
       end
     end
   end
@@ -135,7 +134,7 @@ def existing(cur_connection, server_id, vol_name)
             Chef::Log.info("Status of \##{index + 1} is '#{live[index]['status']}'")
             Chef::Log.info("Volume id #{live[index]['id']}")
             if live[index]['status'] == 'in-use' and item['attachments'][0]['serverId'] == server_id
-              Chef::Log.info("Volume is attached to '#{live[index]['attachments'][0]["device"]}' on '#{node.hostname}'")
+              Chef::Log.info("Volume is attached to '#{live[index]['attachments'][0]["device"]}' on '#{node['hostname']}'")
             end
           end
         else
@@ -160,9 +159,6 @@ def update_attributes(cur_connection, server_id, vol_id)
       break
     end
   end
-  # require 'json'
-  # Chef::Log.warn(jj @resp.data)
-  # node.set['fog_cloud']['volumes'] = Array.new(node['fog_cloud']['volumes']) << @resp.data[:body]['volumes']
 end
 
 
@@ -182,7 +178,6 @@ def find_instance_id(provider)
     when /openstack|rackspace/
       retries = 0
       begin
-        # JSON.parse(open('http://169.254.169.254/openstack/latest/meta_data.json').read)["uuid"]
         JSON.parse(get_metadata('openstack'))['uuid']
       rescue
         if retries == 3
@@ -202,8 +197,7 @@ end
 def get_metadata(provider='openstack')
   @meta_data ||= case provider
   when 'openstack'
-    OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json',options = {:read_timeout => 5, :proxy => false}).read
-    # open('http://169.254.169.254/openstack/latest/meta_data.json',options = {:proxy => false}).read
+    OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json',options = {:read_timeout => 30, :proxy => false}).read
   else
     '{}'
   end

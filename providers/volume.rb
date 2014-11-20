@@ -197,8 +197,7 @@ end
 def get_metadata(provider='openstack')
   @meta_data ||= case provider
   when 'openstack'
-    OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json',options = {:read_timeout => 5, :proxy => false}).read
-    # open('http://169.254.169.254/openstack/latest/meta_data.json',options = {:proxy => false}).read
+    OpenURI.open_uri('http://169.254.169.254/openstack/latest/meta_data.json',options = {:read_timeout => 30, :proxy => false}).read
   else
     '{}'
   end
